@@ -62,6 +62,12 @@ class RandomPlan:
         
         return True
 
+    def chooseNextPositionWisely(self):
+        movDirection = 0
+        state = 1
+
+        return movDirection, state
+
     def randomizeNextPosition(self):
          """ Sorteia uma direcao e calcula a posicao futura do agente 
          @return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
@@ -105,12 +111,4 @@ class RandomPlan:
         """
         
         nextMove = self.move()
-        return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))   
-    
-     
-
-
-        
-       
-        
-        
+        return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))
