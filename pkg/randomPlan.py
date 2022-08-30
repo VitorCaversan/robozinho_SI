@@ -1,5 +1,7 @@
 from random import randint
 import re
+from shutil import move
+from unittest import result
 from state import State
 from graph import Graph
 
@@ -66,8 +68,30 @@ class RandomPlan:
         return True
 
     def chooseNextPositionWisely(self):
-        movDirection = 0
-        state = 1
+        possibilities = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"]
+        movePos       = {"L"  : (0, 1),
+                         "SE" : (1, 1),
+                         "S"  : (1, 0),
+                         "SO" : (1, -1),
+                         "O"  : (0, -1),
+                         "NO" : (-1, -1),
+                         "N"  : (-1, 0),
+                         "NE" : (-1, 1)}
+
+        iterator     = 0
+        movDirection = possibilities[iterator]
+        futureLine   = self.currentState.row + movePos[movDirection][0]
+        futureCol    = self.currentState.col + movePos[movDirection][1]
+        state = State(futureLine, futureCol)
+
+        while self.searchGraph.__contains__(futureLine, futureCol, self.maxColumns) or not self.isPossibleToMove(state):
+            iterator    += 1
+            movDirection = possibilities[iterator]
+            futureLine   = self.currentState.row + movePos[movDirection][0]
+            futureCol    = self.currentState.col + movePos[movDirection][1]
+            state.row    = futureLine
+            state.col    = futureCol
+
 
         return movDirection, state
 
@@ -98,10 +122,12 @@ class RandomPlan:
         """
 
         ## Tenta encontrar um movimento possivel dentro do tabuleiro 
-        result = self.randomizeNextPosition()
+        """result = self.randomizeNextPosition()
 
         while not self.isPossibleToMove(result[1]) or self.searchGraph.__contains__(result[1].row, result[1].col, self.maxColumns):
-            result = self.randomizeNextPosition()
+            result = self.randomizeNextPosition()"""
+
+        result = self.chooseNextPositionWisely()
 
         diagonal = ["NE", "NO", "SE", "SO"]
 

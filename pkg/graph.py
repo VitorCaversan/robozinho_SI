@@ -41,7 +41,7 @@ class Graph:
         #then add Neighbor from f to t with weight
         self.nodeList[f].addNeighbor(self.nodeList[t], weight)
         print("Node ", f, " added.")
-        print(self.nodeList[f].__str__(), ". With weight: ", weight)
+        print(self.nodeList[f].__str__(), "With weight: ", weight)
         
     def getNodes(self):
         # Returns all node keys in the list
