@@ -1,5 +1,7 @@
 from random import randint
+import re
 from state import State
+from graph import Graph
 
 class RandomPlan:
     def __init__(self, maxRows, maxColumns, goal, initialState, name = "none", mesh = "square"):
@@ -13,6 +15,7 @@ class RandomPlan:
         self.currentState = initialState
         self.goalPos = goal
         self.actions = []
+        self.searchGraph = Graph()
 
     
     def setWalls(self, walls):
@@ -69,10 +72,10 @@ class RandomPlan:
         return movDirection, state
 
     def randomizeNextPosition(self):
-         """ Sorteia uma direcao e calcula a posicao futura do agente 
-         @return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
-         possibilities = ["N", "S", "L", "O", "NE", "NO", "SE", "SO"]
-         movePos = { "N" : (-1, 0),
+        """ Sorteia uma direcao e calcula a posicao futura do agente 
+        @return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
+        possibilities = ["N", "S", "L", "O", "NE", "NO", "SE", "SO"]
+        movePos = { "N" : (-1, 0),
                     "S" : (1, 0),
                     "L" : (0, 1),
                     "O" : (0, -1),
@@ -81,11 +84,11 @@ class RandomPlan:
                     "SE" : (1, 1),
                     "SO" : (1, -1)}
 
-         rand = randint(0, 7)
-         movDirection = possibilities[rand]
-         state = State(self.currentState.row + movePos[movDirection][0], self.currentState.col + movePos[movDirection][1])
+        rand = randint(0, 7)
+        movDirection = possibilities[rand]
+        state = State(self.currentState.row + movePos[movDirection][0], self.currentState.col + movePos[movDirection][1])
 
-         return movDirection, state
+        return movDirection, state
 
 
     def chooseAction(self):
@@ -97,8 +100,18 @@ class RandomPlan:
         ## Tenta encontrar um movimento possivel dentro do tabuleiro 
         result = self.randomizeNextPosition()
 
-        while not self.isPossibleToMove(result[1]):
+        while not self.isPossibleToMove(result[1]) or self.searchGraph.__contains__(result[1].row, result[1].col, self.maxColumns):
             result = self.randomizeNextPosition()
+
+        diagonal = ["NE", "NO", "SE", "SO"]
+
+        self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns)
+
+        if result[0] in diagonal:
+            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
+        else:
+            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
+
 
         return result
 

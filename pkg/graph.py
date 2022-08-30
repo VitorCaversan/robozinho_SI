@@ -5,66 +5,47 @@ class Graph:
         self.nodeList = {}
         self.numNodes = 0
     
-    def addNode(self,line,col,model):
+    def addNode(self, line, col, maxColumns):
         self.numNodes += 1
-        newNode = Node(self.line, self.col, self.model)
+        newNode = Node(line, col, maxColumns)
         self.nodeList[newNode.id] = newNode # Adds the new node to the node list
         
         return newNode
       
     def getNode(self, id):
-        """
-        If vertex with key is in Graph then return the Vertex
-        Time complexity is O(1) as we are simply checking whether
-        the key exists or not in a dictionary and returning it
-        """
+        # If node with given id is in Graph then return the node
         
-        #use the get method to return the Vertex if it exists
+        #use the get method to return the node if it exists
         #otherwise it will return None
         return self.nodeList.get(id)
       
-    def __contains__(self, key):
-        """
-        Check whether vertex with key is in the Graph
-        Time complexity is O(1) as we are simply checking whether 
-        the key is in in the dictrionary or not
-        """
-        
-        #returns True or False depending if in list
+    def __contains__(self, line, col, maxColumns):
+        # Check whether node with key is in the Graph
+        # returns True or False depending if in list
+        key = (line*(maxColumns)) + col
         return key in self.nodeList
-      
-    def addEdge(self, f, t, weight = 0):
+
+    def addEdge(self, fLine, fCol, tLine, tCol, maxColumns, weight = 0):
         """
         Add an edge to connect two vertices of t and f with weight
         assuming directed graph
-        
-        Time complexity of O(1) as adding vertices if they don't 
-        exist and then add neighbor
         """
-        
+        f = (fLine*(maxColumns)) + fCol
+        t = (tLine*(maxColumns)) + tCol
         #add vertices if they do not exist
         if f not in self.nodeList:
-            nv = self.addNode(f)
+            nv = self.addNode(fLine, fCol, maxColumns)
         if t not in self.nodeList:
-            nv = self.addNode(t)
+            nv = self.addNode(tLine, tCol, maxColumns)
             
         #then add Neighbor from f to t with weight
         self.nodeList[f].addNeighbor(self.nodeList[t], weight)
+        print("Node ", f, " added.")
+        print(self.nodeList[f].__str__(), ". With weight: ", weight)
         
     def getNodes(self):
-        """
-        Return all the vertices in the graph
-        Time complexity is O(1) as we simply return all the keys
-        in the nodeList dictionary
-        """
-       
+        # Returns all node keys in the list
         return self.nodeList.keys()
-      
-    def getCount(self):
-        """
-        Return a count of all vertices in the Graph
-       
-        Time complexity O(1) because we just return the count
-        attribute
-        """
+
+    def getNumberOfNodes(self):
         return self.numNodes

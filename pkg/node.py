@@ -1,8 +1,6 @@
-from model import Model
-
 class Node:
-    def __init__(self, line, col, model):
-        self.id = (line*model.columns) + col
+    def __init__(self, line, col, maxColumns):
+        self.id = (line*(maxColumns)) + col
         self.line = line
         self.column = col
         self.connectedTo = {}
@@ -14,6 +12,7 @@ class Node:
         return f"{str(self.id)} connected to: {str([nbrNode.id for nbrNode in self.connectedTo])}"
 
     def getConnection(self):
+        # Returns all neighbors keys from a node
         return self.connectedTo.keys()
 
     def getId(self):
