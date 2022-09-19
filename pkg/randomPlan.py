@@ -1,3 +1,4 @@
+from ctypes import sizeof
 from random import randint
 import re
 from shutil import move
@@ -18,6 +19,7 @@ class RandomPlan:
         self.goalPos = goal
         self.actions = []
         self.searchGraph = Graph()
+        self.victimsGraph = Graph()
 
     
     def setWalls(self, walls):
@@ -68,7 +70,7 @@ class RandomPlan:
         return True
 
     def chooseNextPositionWisely(self):
-        possibilities = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"]
+        possibilities = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"] 
         movePos       = {"L"  : (0, 1),
                          "SE" : (1, 1),
                          "S"  : (1, 0),
@@ -86,11 +88,33 @@ class RandomPlan:
 
         while self.searchGraph.__contains__(futureLine, futureCol, self.maxColumns) or not self.isPossibleToMove(state):
             iterator    += 1
-            movDirection = possibilities[iterator]
-            futureLine   = self.currentState.row + movePos[movDirection][0]
-            futureCol    = self.currentState.col + movePos[movDirection][1]
-            state.row    = futureLine
-            state.col    = futureCol
+
+            if iterator > 7:
+                currentNodeId = self.getCurrentNodeId()
+                currentNode = self.searchGraph.getNode(currentNodeId)
+                parentNode = self.searchGraph.getNode(currentNode.getParentNodeId())
+                state.row = parentNode.line
+                state.col = parentNode.column
+
+                parentDirectionY = parentNode.line - currentNode.line
+                parentDirectionX = parentNode.column - currentNode.column
+                iterator2 = 0
+                flag = 0
+                while (0 == flag):
+                    if (movePos[possibilities[iterator2]][0] == parentDirectionY and movePos[possibilities[iterator2]][1] == parentDirectionX):
+                        flag = 1
+                        movDirection = possibilities[iterator2]
+                        break
+                    
+                    iterator2 += 1
+
+                break
+            else:
+                movDirection = possibilities[iterator]
+                futureLine   = self.currentState.row + movePos[movDirection][0]
+                futureCol    = self.currentState.col + movePos[movDirection][1]
+                state.row    = futureLine
+                state.col    = futureCol           
 
 
         return movDirection, state
@@ -131,7 +155,8 @@ class RandomPlan:
 
         diagonal = ["NE", "NO", "SE", "SO"]
 
-        self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns)
+        parentNodeId = self.getCurrentNodeId()
+        self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId)
 
         if result[0] in diagonal:
             self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
@@ -151,3 +176,6 @@ class RandomPlan:
         
         nextMove = self.move()
         return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))
+
+    def getCurrentNodeId(self):
+        return (self.currentState.row*(self.maxColumns)) + self.currentState.col

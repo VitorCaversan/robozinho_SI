@@ -5,38 +5,41 @@ class Graph:
         self.nodeList = {}
         self.numNodes = 0
     
-    def addNode(self, line, col, maxColumns):
-        self.numNodes += 1
-        newNode = Node(line, col, maxColumns)
-        self.nodeList[newNode.id] = newNode # Adds the new node to the node list
+    def addNode(self, line, col, maxColumns, parentNodeId = 0) -> Node:
+        if self.__contains__(line, col, maxColumns):
+            newNode = self.getNode((line*(maxColumns)) + col)
+        else:
+            self.numNodes += 1
+            newNode = Node( line, col, maxColumns, parentNodeId)
+            self.nodeList[newNode.id] = newNode # Adds the new node to the node list
         
         return newNode
       
-    def getNode(self, id):
+    def getNode(self, id) -> Node:
         # If node with given id is in Graph then return the node
         
-        #use the get method to return the node if it exists
-        #otherwise it will return None
+        # use the get method to return the node if it exists
+        # otherwise it will return None
         return self.nodeList.get(id)
       
     def __contains__(self, line, col, maxColumns):
         # Check whether node with key is in the Graph
-        # returns True or False depending if in list
+        # returns True or False depending if it's in the list
         key = (line*(maxColumns)) + col
         return key in self.nodeList
 
-    def addEdge(self, fLine, fCol, tLine, tCol, maxColumns, weight = 0):
+    def addEdge(self, fromLine, fromCol, toLine, toCol, maxColumns, weight = 0):
         """
         Add an edge to connect two vertices of t and f with weight
         assuming directed graph
         """
-        f = (fLine*(maxColumns)) + fCol
-        t = (tLine*(maxColumns)) + tCol
+        f = (fromLine*(maxColumns)) + fromCol
+        t = (toLine*(maxColumns)) + toCol
         #add vertices if they do not exist
         if f not in self.nodeList:
-            nv = self.addNode(fLine, fCol, maxColumns)
+            nv = self.addNode(fromLine, fromCol, maxColumns)
         if t not in self.nodeList:
-            nv = self.addNode(tLine, tCol, maxColumns)
+            nv = self.addNode(toLine, toCol, maxColumns)
             
         #then add Neighbor from f to t with weight
         self.nodeList[f].addNeighbor(self.nodeList[t], weight)

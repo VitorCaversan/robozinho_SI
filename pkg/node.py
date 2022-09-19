@@ -1,9 +1,11 @@
 class Node:
-    def __init__(self, line, col, maxColumns):
+    def __init__(self, line, col, maxColumns, parentNodeId = 0):
         self.id = (line*(maxColumns)) + col
         self.line = line
         self.column = col
         self.connectedTo = {}
+        self.parent = parentNodeId
+        self.type = False # o que tem neste quadrado ? false não tem vitima true tem vitima
 
     def addNeighbor(self, nbrNode, weight = 0): # Weight 0 as default
         self.connectedTo[nbrNode] = weight; 
@@ -20,3 +22,12 @@ class Node:
 
     def getWeight(self, nbrNode):
         return self.connectedTo.get(nbrNode)
+    
+    def getState(self):
+        return self.type
+
+    def getParentNodeId(self):
+        return self.parent
+
+    def setType(self, type):
+        self.type = type

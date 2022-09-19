@@ -110,15 +110,18 @@ class AgentRnd:
 
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
-        if self.prob.goalTest(self.currentState):
+        """if self.prob.goalTest(self.currentState):
             print("!!! Objetivo atingido !!!")
-            del self.libPlan[0]  ## retira plano da biblioteca
+            del self.libPlan[0]  ## retira plano da biblioteca"""
         
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()
         if victimId > 0:
             print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
             print ("vitima encontrada em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
+            # self.plan.searchGraph.getNode(self.plan.getCurrentNodeId()).setType(True) # se funconar é para tirar o tipo aqu e no nó
+            self.plan.victimsGraph.addNode(self.currentState.row, self.plan.currentState.col, self.plan.maxColumns )
+            print (self.plan.victimsGraph.getNode(self.plan.getCurrentNodeId()).__str__())
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
