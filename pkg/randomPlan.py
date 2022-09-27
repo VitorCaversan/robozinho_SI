@@ -69,6 +69,48 @@ class RandomPlan:
         
         return True
 
+    def isPossibleToMovePositionsOnly(self, col, row):
+        """ Verifies if it is possible to move to the given column and row """
+
+        ## vai para fora do labirinto
+        if (col < 0 or row < 0):
+            return False
+
+        if (col >= self.maxColumns or row >= self.maxRows):
+            return False
+        
+        if len(self.walls) == 0:
+            return True
+        
+        ## vai para cima de uma parede
+        if (row, col) in self.walls:
+            return False
+
+        # vai na diagonal? Caso sim, nao pode ter paredes acima & dir. ou acima & esq. ou abaixo & dir. ou abaixo & esq.
+        delta_row = row - self.currentState.row
+        delta_col = col - self.currentState.col
+
+        ## o movimento eh na diagonal
+        if (delta_row !=0 and delta_col != 0):
+            if (self.currentState.row + delta_row, self.currentState.col) in self.walls and (self.currentState.row, self.currentState.col + delta_col) in self.walls:
+                return False
+        
+        return True
+
+    def do(self):
+        """
+        Método utilizado para o polimorfismo dos planos
+
+        Retorna o movimento e o estado do plano (False = nao concluido, True = Concluido)
+        """
+        
+        nextMove = self.move()
+        return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))
+
+    def getCurrentNodeId(self):
+        return (self.currentState.row*(self.maxColumns)) + self.currentState.col
+
+    ##################### FINDING VICTIMS SECTION ##############################
     def chooseNextPositionWisely(self):
         possibilities = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"] 
         movePos       = {"L"  : (0, 1),
@@ -84,11 +126,12 @@ class RandomPlan:
         movDirection = possibilities[iterator]
         futureLine   = self.currentState.row + movePos[movDirection][0]
         futureCol    = self.currentState.col + movePos[movDirection][1]
-        state = State(futureLine, futureCol)
+        state        = State(futureLine, futureCol)
 
         while self.searchGraph.__contains__(futureLine, futureCol, self.maxColumns) or not self.isPossibleToMove(state):
             iterator    += 1
 
+            # If there is no place to go, it returns by the path it came (the parent nodes)
             if iterator > 7:
                 currentNodeId = self.getCurrentNodeId()
                 currentNode = self.searchGraph.getNode(currentNodeId)
@@ -100,7 +143,7 @@ class RandomPlan:
                 parentDirectionX = parentNode.column - currentNode.column
                 iterator2 = 0
                 flag = 0
-                while (0 == flag):
+                while (0 == flag): # Finds the direction of the parent in the possibilities array
                     if (movePos[possibilities[iterator2]][0] == parentDirectionY and movePos[possibilities[iterator2]][1] == parentDirectionX):
                         flag = 1
                         movDirection = possibilities[iterator2]
@@ -166,16 +209,156 @@ class RandomPlan:
 
         return result
 
+    ##################### RETURNING TO BASE SECTION #############################
 
-    def do(self):
-        """
-        Método utilizado para o polimorfismo dos planos
+    # Tries to find a different direction, given a starting one and following a priority array
+    def alternativeDirection(self, startingDirection):
+        possibilities         = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"] # Priority array
+        possibilitiesRelation = {"L"  : (0, 0),
+                                 "SE" : (1, 0),
+                                 "S"  : (2, 0),
+                                 "SO" : (3, 0),
+                                 "O"  : (4, 0),
+                                 "NO" : (5, 0),
+                                 "N"  : (6, 0),
+                                 "NE" : (7, 0)}
+        movePos               = {"L"  : (0, 1),
+                                 "SE" : (1, 1),
+                                 "S"  : (1, 0),
+                                 "SO" : (1, -1),
+                                 "O"  : (0, -1),
+                                 "NO" : (-1, -1),
+                                 "N"  : (-1, 0),
+                                 "NE" : (-1, 1)}
 
-        Retorna o movimento e o estado do plano (False = nao concluido, True = Concluido)
-        """
-        
-        nextMove = self.move()
-        return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))
+        iterator     = possibilitiesRelation[startingDirection][0]
+        iterator    += 1
+        iterator     = iterator % 8
+        movDirection = possibilities[iterator]
+        futureLine   = self.currentState.row + movePos[movDirection][0]
+        futureCol    = self.currentState.col + movePos[movDirection][1]
+        state        = State(futureLine, futureCol)
 
-    def getCurrentNodeId(self):
-        return (self.currentState.row*(self.maxColumns)) + self.currentState.col
+        while not self.isPossibleToMove(state):
+            iterator += 1
+            iterator =  iterator % 8
+
+            movDirection = possibilities[iterator]
+            futureLine   = self.currentState.row + movePos[movDirection][0]
+            futureCol    = self.currentState.col + movePos[movDirection][1]
+            state.row    = futureLine
+            state.col    = futureCol
+
+        return movDirection, state
+
+    def directionToReturn(self, baseCol, baseLine):
+        currentNodeId = self.getCurrentNodeId()
+        currentNode   = self.searchGraph.getNode(currentNodeId)
+
+        deltaCol  = baseCol - (currentNode.column)
+        deltaLine = baseLine - (currentNode.line)
+
+        state        = State(currentNode.line, currentNode.column)
+        movDirection = "NO"
+
+        # Basic idea: try to go in the direction of the base. If it happens to be a wall,
+        # try to go another way following an array priority.
+        if (deltaCol < 0) and (deltaLine < 0):
+            if self.isPossibleToMovePositionsOnly((state.col - 1), (state.row - 1)):
+                movDirection = "NO"
+                state.row    = (currentNode.line   - 1)
+                state.col    = (currentNode.column - 1)
+            else:
+                result = self.alternativeDirection("NO")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+        elif (deltaCol == 0) and (deltaLine < 0):
+            if self.isPossibleToMovePositionsOnly((state.col), (state.row - 1)):
+                movDirection = "N"
+                state.row    = (currentNode.line   - 1)
+                state.col    = currentNode.column
+            else:
+                result = self.alternativeDirection("N")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+        elif (deltaCol > 0) and (deltaLine < 0):
+            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row - 1)):
+                movDirection = "NE"
+                state.row    = (currentNode.line   - 1)
+                state.col    = (currentNode.column + 1)
+            else:
+                result = self.alternativeDirection("NE")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+        elif (deltaCol > 0) and (deltaLine == 0):
+            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row)):
+                movDirection = "L"
+                state.row    = currentNode.line
+                state.col    = (currentNode.column + 1)
+            else:
+                result = self.alternativeDirection("L")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+        elif (deltaCol > 0) and (deltaLine > 0):
+            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row + 1)):
+                movDirection = "SE"
+                state.row    = (currentNode.line   + 1)
+                state.col    = (currentNode.column + 1)
+            else:
+                result = self.alternativeDirection("SE")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+        elif (deltaCol == 0) and (deltaLine > 0):
+            if self.isPossibleToMovePositionsOnly((state.col), (state.row + 1)):
+                movDirection = "S"
+                state.row    = (currentNode.line   + 1)
+                state.col    = (currentNode.column)
+            else:
+                result = self.alternativeDirection("S")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+        elif (deltaCol < 0) and (deltaLine > 0):
+            if self.isPossibleToMovePositionsOnly((state.col - 1), (state.row + 1)):
+                movDirection = "SO"
+                state.row    = (currentNode.line   + 1)
+                state.col    = (currentNode.column - 1)
+            else:
+                result = self.alternativeDirection("SO")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+        elif (deltaCol < 0) and (deltaLine == 0):
+            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row)):
+                movDirection = "O"
+                state.row    = (currentNode.line)
+                state.col    = (currentNode.column + 1)
+            else:
+                result = self.alternativeDirection("O")
+                movDirection = result[0]
+                state.row    = result[1].row
+                state.col    = result[1].col
+
+        return movDirection, state
+
+    def returnToBase(self, baseCol, baseLine):
+
+        result = self.directionToReturn(baseCol, baseLine)
+
+        diagonal = ["NE", "NO", "SE", "SO"]
+
+        parentNodeId = self.getCurrentNodeId()
+        self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId)
+
+        if result[0] in diagonal:
+            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
+        else:
+            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
+
+
+        return result

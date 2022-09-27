@@ -30,6 +30,7 @@ class AgentRnd:
 
         ## Obtem o tempo que tem para executar
         self.tl = configDict["Tl"]
+        self.timeToReturn = self.tl/3 # Arbitrary threshold to return
         print("Tempo disponivel: ", self.tl)
         
         ## Pega o tipo de mesh, que está no model (influência na movimentação)
@@ -110,9 +111,9 @@ class AgentRnd:
 
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
-        """if self.prob.goalTest(self.currentState):
+        if self.prob.goalTest(self.currentState) and (self.tl < self.timeToReturn):
             print("!!! Objetivo atingido !!!")
-            del self.libPlan[0]  ## retira plano da biblioteca"""
+            del self.libPlan[0]  ## retira plano da biblioteca
         
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()
@@ -125,7 +126,11 @@ class AgentRnd:
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
-        result = self.plan.chooseAction()
+        if self.tl > self.timeToReturn:
+            result = self.plan.chooseAction()
+        else:
+            result = self.plan.returnToBase(self.prob.initialState.col, self.prob.initialState.row)
+        
         print("Ag deliberou pela acao: ", result[0], " o estado resultado esperado é: ", result[1])
 
         ## Executa esse acao, atraves do metodo executeGo 
