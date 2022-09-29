@@ -19,6 +19,7 @@ class RandomPlan:
         self.goalPos = goal
         self.actions = []
         self.searchGraph = Graph()
+        self.returnGraph = Graph()
         self.victimsGraph = Graph()
 
     
@@ -239,7 +240,7 @@ class RandomPlan:
         futureCol    = self.currentState.col + movePos[movDirection][1]
         state        = State(futureLine, futureCol)
 
-        while not self.isPossibleToMove(state):
+        while self.returnGraph.__contains__(futureLine, futureCol, self.maxColumns) and not self.isPossibleToMove(state):
             iterator += 1
             iterator =  iterator % 8
 
@@ -354,11 +355,14 @@ class RandomPlan:
 
         parentNodeId = self.getCurrentNodeId()
         self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId)
+        self.returnGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId)
+
 
         if result[0] in diagonal:
             self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
+            self.returnGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
         else:
             self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
-
+            self.returnGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
 
         return result
