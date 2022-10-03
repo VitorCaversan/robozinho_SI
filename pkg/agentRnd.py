@@ -29,7 +29,7 @@ class AgentRnd:
         self.model = model
 
         ## Obtem o tempo que tem para executar
-        self.tl = configDict["Tl"]
+        self.tl = configDict["Te"]
         self.timeToReturn = self.tl/3 # Arbitrary threshold to return
         print("Tempo disponivel: ", self.tl)
         
@@ -119,7 +119,7 @@ class AgentRnd:
         victimId = self.victimPresenceSensor()
         if victimId > 0:
             print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
+
             # self.plan.searchGraph.getNode(self.plan.getCurrentNodeId()).setType(True) # se funconar é para tirar o tipo aqu e no nó
             self.plan.victimsGraph.addNode(self.currentState.row, self.plan.currentState.col, self.plan.maxColumns )
             print (self.plan.victimsGraph.getNode(self.plan.getCurrentNodeId()).__str__())
@@ -186,3 +186,4 @@ class AgentRnd:
 
     def actionDo(self, posAction, action = True):
         self.model.do(posAction, action)
+

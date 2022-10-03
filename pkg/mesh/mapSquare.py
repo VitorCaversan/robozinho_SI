@@ -55,32 +55,36 @@ class MapSquare:
         ##Faz o carregamento de um mapa salvo
         if self.load != False:
             ## Cria um objeto para armazenar cada informação
-            things = {}
             ## Le o arquivo
             arq = open(os.path.join("config_data" ,self.load+".txt"),"r")
-            for line in arq:
-                ## O formato de cada linha é:
-                ## Nome x,y x,y x,y
-                values = line.split(" ")
-                ## O primeiro dado é o nome do objeto, seguido por varias posicoes 
-                things[values.pop(0)] = values
 
-            ## Percorre os elementos que foram definidos
-            for i in things:
-                for j in things[i]:
-                    pos = j.split(",")
-                    ## Define que naquela posicao vai ter determinado objeto
-                    self.listPlaces[int(pos[0])][int(pos[1])].itemInside = i
-                    ## Atualiza a cor do lugar
-                    self.listPlaces[int(pos[0])][int(pos[1])].updateColor()
+            arq_texto = []
+            for line in arq:
+                arq_texto.append(line.split(" ")[1:])
+                
+            base = (int(arq_texto[2][0].split(",")[0]), int(arq_texto[2][0].split(",")[1]))
+
+            print(len(arq_texto[5]))
+            for i in range(0, len(arq_texto[5])):
+                vitimaX = int(arq_texto[5][i].split(",")[0])
+                vitimaY = int(arq_texto[5][i].split(",")[1]) 
+                self.listPlaces[vitimaY][vitimaX].itemInside = "Vitima"
+                self.listPlaces[vitimaY][vitimaX].updateColor()
+               
+
+            for i in range(0, len(arq_texto[6])):
+                paredeX = int(arq_texto[6][i].split(",")[0])
+                paredeY = int(arq_texto[6][i].split(",")[1])
+                self.listPlaces[paredeY][paredeX].itemInside = "Parede"
+                self.listPlaces[paredeY][paredeX].updateColor()
 
             ## Seta as posicoes do robo e do objetivo
-            if "Agente" in things:
-                pos = things["Agente"][0].split(",")
-                self.posAgent = (int(pos[0]), int(pos[1]))
-            if "Objetivo" in things:
-                pos = things["Objetivo"][0].split(",")
-                self.posGoal = (int(pos[0]), int(pos[1]))
+            
+            pos = base
+            self.posAgent = (int(pos[0]), int(pos[1]))
+          
+            pos = base
+            self.posGoal = (int(pos[0]), int(pos[1]))
 
 
     ## Metodo que verifica o clique do mouse

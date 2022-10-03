@@ -163,26 +163,6 @@ class RandomPlan:
 
         return movDirection, state
 
-    def randomizeNextPosition(self):
-        """ Sorteia uma direcao e calcula a posicao futura do agente 
-        @return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
-        possibilities = ["N", "S", "L", "O", "NE", "NO", "SE", "SO"]
-        movePos = { "N" : (-1, 0),
-                    "S" : (1, 0),
-                    "L" : (0, 1),
-                    "O" : (0, -1),
-                    "NE" : (-1, 1),
-                    "NO" : (-1, -1),
-                    "SE" : (1, 1),
-                    "SO" : (1, -1)}
-
-        rand = randint(0, 7)
-        movDirection = possibilities[rand]
-        state = State(self.currentState.row + movePos[movDirection][0], self.currentState.col + movePos[movDirection][1])
-
-        return movDirection, state
-
-
     def chooseAction(self):
         """ Escolhe o proximo movimento de forma aleatoria. 
         Eh a acao que vai ser executada pelo agente. 
@@ -233,18 +213,16 @@ class RandomPlan:
                                  "NE" : (-1, 1)}
 
         iterator     = possibilitiesRelation[startingDirection][0]
-        iterator    += 1
-        iterator     = iterator % 8
-        movDirection = possibilities[iterator]
+        iterator    += 1 # Will be used allways with %8, in order to simulate a cyclic queue
+        movDirection = possibilities[iterator%8]
         futureLine   = self.currentState.row + movePos[movDirection][0]
         futureCol    = self.currentState.col + movePos[movDirection][1]
         state        = State(futureLine, futureCol)
 
         while self.returnGraph.__contains__(futureLine, futureCol, self.maxColumns) and not self.isPossibleToMove(state):
             iterator += 1
-            iterator =  iterator % 8
 
-            movDirection = possibilities[iterator]
+            movDirection = possibilities[iterator%8]
             futureLine   = self.currentState.row + movePos[movDirection][0]
             futureCol    = self.currentState.col + movePos[movDirection][1]
             state.row    = futureLine
