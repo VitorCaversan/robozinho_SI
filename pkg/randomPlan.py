@@ -18,9 +18,11 @@ class RandomPlan:
         self.currentState = initialState
         self.goalPos = goal
         self.actions = []
-        self.searchGraph = Graph()
-        self.returnGraph = Graph()
+        self.searchGraph  = Graph()
+        self.returnGraph  = Graph()
         self.victimsGraph = Graph()
+        self.wallsGraph   = Graph()
+        self.searchGraph.addNode(initialState.row, initialState.col, maxColumns)
 
     
     def setWalls(self, walls):
@@ -112,24 +114,32 @@ class RandomPlan:
         return (self.currentState.row*(self.maxColumns)) + self.currentState.col
 
     ##################### FINDING VICTIMS SECTION ##############################
-    def chooseNextPositionWisely(self):
-        possibilities = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"] 
-        movePos       = {"L"  : (0, 1),
-                         "SE" : (1, 1),
-                         "S"  : (1, 0),
-                         "SO" : (1, -1),
-                         "O"  : (0, -1),
-                         "NO" : (-1, -1),
-                         "N"  : (-1, 0),
-                         "NE" : (-1, 1)}
+    def chooseNextPositionWisely(self, startingDirection):
+        possibilities = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"]
+        possibilitiesRelation = {"L"  : (0, 0),
+                                 "SE" : (1, 0),
+                                 "S"  : (2, 0),
+                                 "SO" : (3, 0),
+                                 "O"  : (4, 0),
+                                 "NO" : (5, 0),
+                                 "N"  : (6, 0),
+                                 "NE" : (7, 0)}
+        movePos               = {"L"  : (0, 1),
+                                "SE" : (1, 1),
+                                "S"  : (1, 0),
+                                "SO" : (1, -1),
+                                "O"  : (0, -1),
+                                "NO" : (-1, -1),
+                                "N"  : (-1, 0),
+                                "NE" : (-1, 1)}
 
-        iterator     = 0
+        iterator     = possibilitiesRelation[startingDirection][0]
         movDirection = possibilities[iterator]
         futureLine   = self.currentState.row + movePos[movDirection][0]
         futureCol    = self.currentState.col + movePos[movDirection][1]
         state        = State(futureLine, futureCol)
 
-        while self.searchGraph.__contains__(futureLine, futureCol, self.maxColumns) or not self.isPossibleToMove(state):
+        while self.searchGraph.__contains__(futureLine, futureCol, self.maxColumns) or self.wallsGraph.__contains__(futureLine, futureCol, self.maxColumns):
             iterator    += 1
 
             # If there is no place to go, it returns by the path it came (the parent nodes)
@@ -154,11 +164,11 @@ class RandomPlan:
 
                 break
             else:
-                movDirection = possibilities[iterator]
+                movDirection = possibilities[iterator%8]
                 futureLine   = self.currentState.row + movePos[movDirection][0]
                 futureCol    = self.currentState.col + movePos[movDirection][1]
                 state.row    = futureLine
-                state.col    = futureCol           
+                state.col    = futureCol
 
 
         return movDirection, state
@@ -174,18 +184,20 @@ class RandomPlan:
 
         while not self.isPossibleToMove(result[1]) or self.searchGraph.__contains__(result[1].row, result[1].col, self.maxColumns):
             result = self.randomizeNextPosition()"""
-
-        result = self.chooseNextPositionWisely()
-
-        diagonal = ["NE", "NO", "SE", "SO"]
-
         parentNodeId = self.getCurrentNodeId()
-        self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId)
+        parentNode   = self.searchGraph.getNode(parentNodeId)
 
-        if result[0] in diagonal:
-            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
-        else:
-            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
+        result = self.chooseNextPositionWisely(parentNode.getnextMovDirection())
+
+        if self.isPossibleToMove(result[1]):
+            diagonal = ["NE", "NO", "SE", "SO"]
+
+            self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId, result[0])
+
+            if result[0] in diagonal:
+                self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
+            else:
+                self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
 
 
         return result
@@ -219,7 +231,7 @@ class RandomPlan:
         futureCol    = self.currentState.col + movePos[movDirection][1]
         state        = State(futureLine, futureCol)
 
-        while self.returnGraph.__contains__(futureLine, futureCol, self.maxColumns) and not self.isPossibleToMove(state):
+        while self.returnGraph.__contains__(futureLine, futureCol, self.maxColumns) or self.wallsGraph.__contains__(futureLine, futureCol, self.maxColumns):
             iterator += 1
 
             movDirection = possibilities[iterator%8]
@@ -243,7 +255,7 @@ class RandomPlan:
         # Basic idea: try to go in the direction of the base. If it happens to be a wall,
         # try to go another way following an array priority.
         if (deltaCol < 0) and (deltaLine < 0):
-            if self.isPossibleToMovePositionsOnly((state.col - 1), (state.row - 1)):
+            if not self.wallsGraph.__contains__((state.row - 1), (state.col - 1), self.maxColumns):
                 movDirection = "NO"
                 state.row    = (currentNode.line   - 1)
                 state.col    = (currentNode.column - 1)
@@ -253,7 +265,7 @@ class RandomPlan:
                 state.row    = result[1].row
                 state.col    = result[1].col
         elif (deltaCol == 0) and (deltaLine < 0):
-            if self.isPossibleToMovePositionsOnly((state.col), (state.row - 1)):
+            if not self.wallsGraph.__contains__((state.row - 1), (state.col), self.maxColumns):
                 movDirection = "N"
                 state.row    = (currentNode.line   - 1)
                 state.col    = currentNode.column
@@ -263,7 +275,7 @@ class RandomPlan:
                 state.row    = result[1].row
                 state.col    = result[1].col
         elif (deltaCol > 0) and (deltaLine < 0):
-            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row - 1)):
+            if not self.wallsGraph.__contains__((state.row - 1), (state.col + 1), self.maxColumns):
                 movDirection = "NE"
                 state.row    = (currentNode.line   - 1)
                 state.col    = (currentNode.column + 1)
@@ -273,7 +285,7 @@ class RandomPlan:
                 state.row    = result[1].row
                 state.col    = result[1].col
         elif (deltaCol > 0) and (deltaLine == 0):
-            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row)):
+            if not self.wallsGraph.__contains__((state.row), (state.col + 1), self.maxColumns):
                 movDirection = "L"
                 state.row    = currentNode.line
                 state.col    = (currentNode.column + 1)
@@ -283,7 +295,7 @@ class RandomPlan:
                 state.row    = result[1].row
                 state.col    = result[1].col
         elif (deltaCol > 0) and (deltaLine > 0):
-            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row + 1)):
+            if not self.wallsGraph.__contains__((state.row + 1), (state.col + 1), self.maxColumns):
                 movDirection = "SE"
                 state.row    = (currentNode.line   + 1)
                 state.col    = (currentNode.column + 1)
@@ -293,7 +305,7 @@ class RandomPlan:
                 state.row    = result[1].row
                 state.col    = result[1].col
         elif (deltaCol == 0) and (deltaLine > 0):
-            if self.isPossibleToMovePositionsOnly((state.col), (state.row + 1)):
+            if not self.wallsGraph.__contains__((state.row + 1), (state.col), self.maxColumns):
                 movDirection = "S"
                 state.row    = (currentNode.line   + 1)
                 state.col    = (currentNode.column)
@@ -303,7 +315,7 @@ class RandomPlan:
                 state.row    = result[1].row
                 state.col    = result[1].col
         elif (deltaCol < 0) and (deltaLine > 0):
-            if self.isPossibleToMovePositionsOnly((state.col - 1), (state.row + 1)):
+            if not self.wallsGraph.__contains__((state.row + 1), (state.col - 1), self.maxColumns):
                 movDirection = "SO"
                 state.row    = (currentNode.line   + 1)
                 state.col    = (currentNode.column - 1)
@@ -313,10 +325,10 @@ class RandomPlan:
                 state.row    = result[1].row
                 state.col    = result[1].col
         elif (deltaCol < 0) and (deltaLine == 0):
-            if self.isPossibleToMovePositionsOnly((state.col + 1), (state.row)):
+            if not self.wallsGraph.__contains__((state.row), (state.col - 1), self.maxColumns):
                 movDirection = "O"
                 state.row    = (currentNode.line)
-                state.col    = (currentNode.column + 1)
+                state.col    = (currentNode.column - 1)
             else:
                 result = self.alternativeDirection("O")
                 movDirection = result[0]
@@ -329,18 +341,19 @@ class RandomPlan:
 
         result = self.directionToReturn(baseCol, baseLine)
 
-        diagonal = ["NE", "NO", "SE", "SO"]
+        if self.isPossibleToMove(result[1]):
+            diagonal = ["NE", "NO", "SE", "SO"]
 
-        parentNodeId = self.getCurrentNodeId()
-        self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId)
-        self.returnGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId)
+            parentNodeId = self.getCurrentNodeId()
+            self.searchGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId, result[0])
+            self.returnGraph.addNode(result[1].row, result[1].col, self.maxColumns, parentNodeId, result[0])
 
 
-        if result[0] in diagonal:
-            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
-            self.returnGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
-        else:
-            self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
-            self.returnGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
+            if result[0] in diagonal:
+                self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
+                self.returnGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1.5)
+            else:
+                self.searchGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
+                self.returnGraph.addEdge(self.currentState.row, self.currentState.col, result[1].row, result[1].col, self.maxColumns, 1)
 
         return result

@@ -100,6 +100,18 @@ class AgentRnd:
         ## Verifica se a execução do acao do ciclo anterior funcionou ou nao
         if not (self.currentState == self.expectedState):
             print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
+            self.plan.updateCurrentState(self.positionSensor())
+            self.plan.wallsGraph.addNode(self.expectedState.row, self.expectedState.col, self.plan.maxColumns)
+            if self.tl > self.timeToReturn:
+                currentNodeId = self.plan.getCurrentNodeId()
+                currentNode   = self.plan.searchGraph.getNode(currentNodeId)
+                currentNode.changeNextMovDirection()
+                #self.plan.searchGraph.getNode(self.plan.getCurrentNodeId).changeNextMovDirection()
+            else:
+                currentNodeId = self.plan.getCurrentNodeId()
+                currentNode   = self.plan.returnGraph.getNode(currentNodeId)
+                currentNode.changeNextMovDirection()
+                #self.plan.returnGraph.getNode(self.plan.getCurrentNodeId).changeNextMovDirection()
 
         ## Funcionou ou nao, vou somar o custo da acao com o total 
         self.costAll += self.prob.getActionCost(self.previousAction)
@@ -128,6 +140,9 @@ class AgentRnd:
         ## currentAction eh uma tupla na forma: <direcao>, <state>
         if self.tl > self.timeToReturn:
             result = self.plan.chooseAction()
+        elif (abs(self.tl-self.timeToReturn) < 1):
+            self.plan.returnGraph.addNode(self.currentState.row, self.currentState.col, self.plan.maxColumns, self.plan.getCurrentNodeId)
+            result = self.plan.returnToBase(self.prob.initialState.col, self.prob.initialState.row)
         else:
             result = self.plan.returnToBase(self.prob.initialState.col, self.prob.initialState.row)
         

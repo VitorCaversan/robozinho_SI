@@ -5,12 +5,12 @@ class Graph:
         self.nodeList = {}
         self.numNodes = 0
     
-    def addNode(self, line, col, maxColumns, parentNodeId = 0) -> Node:
+    def addNode(self, line, col, maxColumns, parentNodeId = 0, nextMovDirection = "L") -> Node:
         if self.__contains__(line, col, maxColumns):
             newNode = self.getNode((line*(maxColumns)) + col)
         else:
             self.numNodes += 1
-            newNode = Node( line, col, maxColumns, parentNodeId)
+            newNode = Node( line, col, maxColumns, parentNodeId, nextMovDirection)
             self.nodeList[newNode.id] = newNode # Adds the new node to the node list
         
         return newNode
