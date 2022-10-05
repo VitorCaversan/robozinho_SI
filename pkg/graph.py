@@ -52,3 +52,39 @@ class Graph:
 
     def getNumberOfNodes(self):
         return self.numNodes
+
+    # Changes the next movement direction of a node in order for the search system not to enter a loop
+    def changeNextMovDirectionFromNode(self, nodeId, maxColumns):
+        possibilities         = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"] # Priority array
+        possibilitiesRelation = {"L"  : (0, 0),
+                                 "SE" : (1, 0),
+                                 "S"  : (2, 0),
+                                 "SO" : (3, 0),
+                                 "O"  : (4, 0),
+                                 "NO" : (5, 0),
+                                 "N"  : (6, 0),
+                                 "NE" : (7, 0)}
+        movePos               = {"L"  : (0, 1),
+                                "SE" : (1, 1),
+                                "S"  : (1, 0),
+                                "SO" : (1, -1),
+                                "O"  : (0, -1),
+                                "NO" : (-1, -1),
+                                "N"  : (-1, 0),
+                                "NE" : (-1, 1)}
+
+        node = self.getNode(nodeId)
+        newMovIndex = possibilitiesRelation[node.getnextMovDirection()][0]
+        futureLine   = node.line   + movePos[node.getnextMovDirection()][0]
+        futureCol    = node.column + movePos[node.getnextMovDirection()][1]
+
+        iterator = 0
+        while (self.__contains__(futureLine, futureCol, maxColumns)):
+            iterator    += 1
+            newMovIndex = (newMovIndex + 1) % 8
+            node.nextMovDirection = possibilities[newMovIndex]
+            futureLine   = node.line   + movePos[node.getnextMovDirection()][0]
+            futureCol    = node.column + movePos[node.getnextMovDirection()][1]
+            
+            if iterator > 7:
+                break

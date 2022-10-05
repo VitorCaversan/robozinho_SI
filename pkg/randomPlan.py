@@ -133,14 +133,16 @@ class RandomPlan:
                                 "N"  : (-1, 0),
                                 "NE" : (-1, 1)}
 
-        iterator     = possibilitiesRelation[startingDirection][0]
-        movDirection = possibilities[iterator]
+        index        = possibilitiesRelation[startingDirection][0]
+        movDirection = possibilities[index]
         futureLine   = self.currentState.row + movePos[movDirection][0]
         futureCol    = self.currentState.col + movePos[movDirection][1]
         state        = State(futureLine, futureCol)
+        iterator     = 0
 
         while self.searchGraph.__contains__(futureLine, futureCol, self.maxColumns) or self.wallsGraph.__contains__(futureLine, futureCol, self.maxColumns):
-            iterator    += 1
+            iterator += 1
+            index    = (index + 1) % 8
 
             # If there is no place to go, it returns by the path it came (the parent nodes)
             if iterator > 7:
@@ -158,13 +160,14 @@ class RandomPlan:
                     if (movePos[possibilities[iterator2]][0] == parentDirectionY and movePos[possibilities[iterator2]][1] == parentDirectionX):
                         flag = 1
                         movDirection = possibilities[iterator2]
+                        self.searchGraph.changeNextMovDirectionFromNode(currentNode.getParentNodeId(), self.maxColumns)
                         break
                     
                     iterator2 += 1
 
                 break
             else:
-                movDirection = possibilities[iterator%8]
+                movDirection = possibilities[index]
                 futureLine   = self.currentState.row + movePos[movDirection][0]
                 futureCol    = self.currentState.col + movePos[movDirection][1]
                 state.row    = futureLine
@@ -224,21 +227,46 @@ class RandomPlan:
                                  "N"  : (-1, 0),
                                  "NE" : (-1, 1)}
 
-        iterator     = possibilitiesRelation[startingDirection][0]
-        iterator    += 1 # Will be used allways with %8, in order to simulate a cyclic queue
-        movDirection = possibilities[iterator%8]
+        index     = possibilitiesRelation[startingDirection][0]
+        index    += 1 # Will be used allways with %8, in order to simulate a cyclic queue
+        movDirection = possibilities[index%8]
         futureLine   = self.currentState.row + movePos[movDirection][0]
         futureCol    = self.currentState.col + movePos[movDirection][1]
         state        = State(futureLine, futureCol)
 
+        iterator = 0
         while self.returnGraph.__contains__(futureLine, futureCol, self.maxColumns) or self.wallsGraph.__contains__(futureLine, futureCol, self.maxColumns):
             iterator += 1
+            index = (index + 1) % 8
 
-            movDirection = possibilities[iterator%8]
-            futureLine   = self.currentState.row + movePos[movDirection][0]
-            futureCol    = self.currentState.col + movePos[movDirection][1]
-            state.row    = futureLine
-            state.col    = futureCol
+            # If there is no place to go, it returns by the path it came (the parent nodes)
+            if iterator > 7:
+                currentNodeId = self.getCurrentNodeId()
+                currentNode   = self.returnGraph.getNode(currentNodeId)
+                parentNode    = self.returnGraph.getNode(currentNode.getParentNodeId())
+                state.row     = parentNode.line
+                state.col     = parentNode.column
+
+                parentDirectionY = parentNode.line - currentNode.line
+                parentDirectionX = parentNode.column - currentNode.column
+                iterator2        = 0
+                flag             = 0
+                while (0 == flag): # Finds the direction of the parent in the possibilities array
+                    if (movePos[possibilities[iterator2]][0] == parentDirectionY and movePos[possibilities[iterator2]][1] == parentDirectionX):
+                        flag = 1
+                        movDirection = possibilities[iterator2]
+                        self.returnGraph.changeNextMovDirectionFromNode(currentNode.getParentNodeId(), self.maxColumns)
+                        break
+                    
+                    iterator2 += 1
+
+                break
+            else:
+                movDirection = possibilities[index]
+                futureLine   = self.currentState.row + movePos[movDirection][0]
+                futureCol    = self.currentState.col + movePos[movDirection][1]
+                state.row    = futureLine
+                state.col    = futureCol
 
         return movDirection, state
 

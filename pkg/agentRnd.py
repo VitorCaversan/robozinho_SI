@@ -106,12 +106,10 @@ class AgentRnd:
                 currentNodeId = self.plan.getCurrentNodeId()
                 currentNode   = self.plan.searchGraph.getNode(currentNodeId)
                 currentNode.changeNextMovDirection()
-                #self.plan.searchGraph.getNode(self.plan.getCurrentNodeId).changeNextMovDirection()
             else:
                 currentNodeId = self.plan.getCurrentNodeId()
                 currentNode   = self.plan.returnGraph.getNode(currentNodeId)
                 currentNode.changeNextMovDirection()
-                #self.plan.returnGraph.getNode(self.plan.getCurrentNodeId).changeNextMovDirection()
 
         ## Funcionou ou nao, vou somar o custo da acao com o total 
         self.costAll += self.prob.getActionCost(self.previousAction)
@@ -151,7 +149,7 @@ class AgentRnd:
         ## Executa esse acao, atraves do metodo executeGo 
         self.executeGo(result[0])
         self.previousAction = result[0]
-        self.expectedState = result[1]       
+        self.expectedState = result[1]
 
         return 1
 
