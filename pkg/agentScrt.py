@@ -1,5 +1,4 @@
-## AGENTE RANDOM
-### @Author: Luan Klein e Tacla (UTFPR)
+## AGENTE EXPLORADOR
 ### Agente que fixa um objetivo aleatório e anda aleatoriamente pelo labirinto até encontrá-lo.
 ### Executa raciocíni on-line: percebe --> [delibera] --> executa ação --> percebe --> ...
 import sys
@@ -12,27 +11,29 @@ from state import State
 from random import randint
 
 ## Importa o algoritmo para o plano
-from randomPlan import RandomPlan
+from scrtPlan import ScrtPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
 from planner import Planner
 
 ## Classe que define o Agente
-class AgentRnd:
-    def __init__(self, model, configDict):
+class AgentScrt:
+    def __init__(self, model, configDict, base, victims, visited):
         """ 
-        Construtor do agente random
+        Construtor do agente explorador
         @param model referencia o ambiente onde o agente estah situado
         """
        
         self.model = model
 
         ## Obtem o tempo que tem para executar
-        self.tl = configDict["Te"]
-        self.timeToReturn = self.tl/3 # Arbitrary threshold to return
-        self.victims = [] # Matrix with each row having the following form: ((posY, posX), id, gravidade, classe)
-        print("Tempo disponivel: ", self.tl)
+        self.ts = configDict["Ts"]
+        self.maxT = configDict["Ts"]
+        self.victims = victims
+        self.visited = visited
+
+        print("Tempo disponivel: ", self.ts)
         
         ## Pega o tipo de mesh, que está no model (influência na movimentação)
         self.mesh = self.model.mesh
@@ -41,6 +42,7 @@ class AgentRnd:
         ## Cria a instância do problema na mente do agente (sao suas crencas)
         self.prob = Problem()
         self.prob.createMaze(model.rows, model.columns, model.maze)
+        self.base = base
       
     
         # O agente le sua posica no ambiente por meio do sensor
@@ -69,11 +71,11 @@ class AgentRnd:
         self.costAll = 0
 
         ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
-        self.plan = RandomPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
+        self.plan = ScrtPlan(model.rows, model.columns, self.prob.goalState, initial, self.base, self.model, "goal", self.mesh, victims, visited, self.ts)
 
         ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
         ## Em situacoes de exploracao, o agente deve aprender em tempo de execucao onde estao as paredes
-        self.plan.setWalls(model.maze.walls)
+        #self.plan.setWalls(model.maze.walls)
         
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan=[self.plan]
@@ -84,7 +86,9 @@ class AgentRnd:
 
     ## Metodo que define a deliberacao do agente 
     def deliberate(self):
+        self.walls = self.plan.walls
         ## Verifica se há algum plano a ser executado
+
         if len(self.libPlan) == 0:
             return -1   ## fim da execucao do agente, acabaram os planos
         
@@ -98,67 +102,44 @@ class AgentRnd:
         self.plan.updateCurrentState(self.currentState) # atualiza o current state no plano
         print("Ag cre que esta em: ", self.currentState)
 
+        for victim in self.victims:
+            victimCoord = victim[0]
+            coord = State(victimCoord[1], victimCoord[0])
+            if coord == self.currentState:
+                self.model.maze.board.listPlaces[victimCoord[1]][victimCoord[0]].color = (0, 0, 255)
+
         ## Verifica se a execução do acao do ciclo anterior funcionou ou nao
         if not (self.currentState == self.expectedState):
             print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
-            self.plan.updateCurrentState(self.positionSensor())
-            self.plan.wallsGraph.addNode(self.expectedState.row, self.expectedState.col, self.plan.maxColumns)
-            if self.tl > self.timeToReturn:
-                currentNodeId = self.plan.getCurrentNodeId()
-                currentNode   = self.plan.searchGraph.getNode(currentNodeId)
-                currentNode.changeNextMovDirection()
-            else:
-                currentNodeId = self.plan.getCurrentNodeId()
-                currentNode   = self.plan.returnGraph.getNode(currentNodeId)
-                try:
-                    currentNode.changeNextMovDirection()
-                except:
-                    currentNode = self.plan.searchGraph.getNode(currentNodeId)
-                    currentNode.changeNextMovDirection()
 
         ## Funcionou ou nao, vou somar o custo da acao com o total 
         self.costAll += self.prob.getActionCost(self.previousAction)
         print ("Custo até o momento (com a ação escolhida):", self.costAll) 
 
         ## consome o tempo gasto
-        self.tl -= self.prob.getActionCost(self.previousAction)
-        print("Tempo disponivel: ", self.tl)
+        self.ts -= self.prob.getActionCost(self.previousAction)
+        print("Tempo disponivel: ", self.ts)
 
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
-        if self.prob.goalTest(self.currentState) and (self.tl < self.timeToReturn):
+
+        if len(self.plan.moves) == 0:
             print("!!! Objetivo atingido !!!")
             del self.libPlan[0]  ## retira plano da biblioteca
-        
-        ## Verifica se tem vitima na posicao atual    
-        victimId = self.victimPresenceSensor()
-        if victimId > 0:
-            if not self.plan.victimsGraph.__contains__(self.currentState.row, self.plan.currentState.col, self.plan.maxColumns):
-                self.plan.victimsGraph.addNode(self.currentState.row, self.plan.currentState.col, self.plan.maxColumns)
-                vitalSignals = self.victimVitalSignalsSensor(victimId)
-                if vitalSignals != []:
-                    self.tl -= 2 # Cost to analyse vital signals
-                    print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", vitalSignals)
-                    self.appendVictim(self.currentState, victimId, vitalSignals[0])
-            else:
-                print ("vitima na posicao: ", self.currentState, " de id: ", victimId, " ja analisada")
+            return -1
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
-        if self.tl > self.timeToReturn:
-            result = self.plan.chooseAction()
-        elif (abs(self.tl-self.timeToReturn) < 1):
-            self.plan.returnGraph.addNode(self.currentState.row, self.currentState.col, self.plan.maxColumns, self.plan.getCurrentNodeId)
-            result = self.plan.returnToBase(self.prob.initialState.col, self.prob.initialState.row)
-        else:
-            result = self.plan.returnToBase(self.prob.initialState.col, self.prob.initialState.row)
+        result = self.plan.chooseAction()
+
         
+
         print("Ag deliberou pela acao: ", result[0], " o estado resultado esperado é: ", result[1])
 
         ## Executa esse acao, atraves do metodo executeGo 
         self.executeGo(result[0])
         self.previousAction = result[0]
-        self.expectedState = result[1]
+        self.expectedState = result[1]       
 
         return 1
 
@@ -170,7 +151,7 @@ class AgentRnd:
 
         ## Passa a acao para o modelo
         result = self.model.go(action)
-        
+
         ## Se o resultado for True, significa que a acao foi completada com sucesso, e ja pode ser removida do plano
         ## if (result[1]): ## atingiu objetivo ## TACLA 20220311
         ##    del self.plan[0]
@@ -183,23 +164,6 @@ class AgentRnd:
         @return instancia da classe Estado que representa a posição atual do agente no labirinto."""
         pos = self.model.agentPos
         return State(pos[0],pos[1])
-
-    def victimPresenceSensor(self):
-        """Simula um sensor que realiza a deteccao de presenca de vitima na posicao onde o agente se encontra no ambiente
-           @return retorna o id da vítima"""     
-        return self.model.isThereVictim()
-
-    def victimVitalSignalsSensor(self, victimId):
-        """Simula um sensor que realiza a leitura dos sinais da vitima 
-        @param o id da vítima
-        @return a lista de sinais vitais (ou uma lista vazia se não tem vítima com o id)"""     
-        return self.model.getVictimVitalSignals(victimId)
-
-    def victimDiffOfAcessSensor(self, victimId):
-        """Simula um sensor que realiza a leitura dos dados relativos à dificuldade de acesso a vítima
-        @param o id da vítima
-        @return a lista dos dados de dificuldade (ou uma lista vazia se não tem vítima com o id)"""     
-        return self.model.getDifficultyOfAcess(victimId)
     
     ## Metodo que atualiza a biblioteca de planos, de acordo com o estado atual do agente
     def updateLibPlan(self):
@@ -208,12 +172,3 @@ class AgentRnd:
 
     def actionDo(self, posAction, action = True):
         self.model.do(posAction, action)
-
-    def appendVictim(self, state, id, vitalInfo):
-        (x, y) = (state.col, state.row)
-        coord = (x, y)
-        grav = vitalInfo[len(vitalInfo) - 2]
-        classe = vitalInfo[len(vitalInfo) - 1]
-        victim = (coord, id, grav, classe)
-        self.victims.append(victim)
-        return

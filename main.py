@@ -1,11 +1,14 @@
+from sre_parse import State
 import sys
 import os
 import time
 
 ## Importa as classes que serao usadas
 sys.path.append(os.path.join("pkg"))
-from model import Model
-from agentRnd import AgentRnd
+from pkg.model import Model
+from pkg.agentRnd import AgentRnd
+from pkg.agentScrt import AgentScrt
+from pkg.state import State
 
 
 ## Metodo utilizado para permitir que o usuario construa o labirindo clicando em cima
@@ -61,7 +64,33 @@ def main():
     while agent.deliberate() != -1:
         model.draw()
         time.sleep(0.3) # para dar tempo de visualizar as movimentacoes do agente no labirinto
-    model.draw()    
+    model.draw()
+
+    searchGraph  = agent.plan.searchGraph
+    victimsGraph = agent.plan.victimsGraph
+    victims      = agent.victims
+
+    visited = []
+
+    for nodeId in searchGraph.nodeList:
+        node = searchGraph.getNode(nodeId)
+        state = State(node.line, node.column)
+        visited.append(state)
+
+    for nodeId in victimsGraph.nodeList:
+        node = victimsGraph.getNode(nodeId)
+        state = State(node.line, node.column)
+        if state not in visited:
+            visited.append(state)
+
+
+    rescuer = AgentScrt(model, configDict, base, victims, visited)
+
+    rescuer.deliberate()
+    while rescuer.deliberate() != -1:
+        model.draw()
+        time.sleep(0.3)
+    model.draw
 
 if __name__ == '__main__':
     main()
