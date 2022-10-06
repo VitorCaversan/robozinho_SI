@@ -30,7 +30,7 @@ class AgentRnd:
 
         ## Obtem o tempo que tem para executar
         self.tl = configDict["Te"]
-        self.timeToReturn = self.tl/3 # Arbitrary threshold to return
+        self.timeToReturn = False # Flag to return
         print("Tempo disponivel: ", self.tl)
         
         ## Pega o tipo de mesh, que está no model (influência na movimentação)
@@ -72,7 +72,7 @@ class AgentRnd:
 
         ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
         ## Em situacoes de exploracao, o agente deve aprender em tempo de execucao onde estao as paredes
-        self.plan.setWalls(model.maze.walls)
+        self.plan.setWalls(model.maze.walls) # se pa comentar isso aq ?
         
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan=[self.plan]
@@ -88,7 +88,8 @@ class AgentRnd:
             return -1   ## fim da execucao do agente, acabaram os planos
         
         self.plan = self.libPlan[0]
-
+        tempo = self.currentState.row + self.currentState.col
+        print("custo pra voltar ", tempo)
         print("\n*** Inicio do ciclo raciocinio ***")
         print("Pos agente no amb.: ", self.positionSensor())
 
@@ -102,11 +103,13 @@ class AgentRnd:
             print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
             self.plan.updateCurrentState(self.positionSensor())
             self.plan.wallsGraph.addNode(self.expectedState.row, self.expectedState.col, self.plan.maxColumns)
-            if self.tl > self.timeToReturn:
+            if not self.timeToReturn: 
+                self.podeContinuar()
                 currentNodeId = self.plan.getCurrentNodeId()
                 currentNode   = self.plan.searchGraph.getNode(currentNodeId)
                 currentNode.changeNextMovDirection()
             else:
+                print("ERRO? agente deve estar em x ", self.currentState.col ,"e y", self.currentState.row)
                 currentNodeId = self.plan.getCurrentNodeId()
                 currentNode   = self.plan.returnGraph.getNode(currentNodeId)
                 currentNode.changeNextMovDirection()
@@ -121,7 +124,7 @@ class AgentRnd:
 
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
-        if self.prob.goalTest(self.currentState) and (self.tl < self.timeToReturn):
+        if self.prob.goalTest(self.currentState) and (self.timeToReturn):
             print("!!! Objetivo atingido !!!")
             del self.libPlan[0]  ## retira plano da biblioteca
         
@@ -136,11 +139,9 @@ class AgentRnd:
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
-        if self.tl > self.timeToReturn:
+        if not self.timeToReturn: 
+            self.podeContinuar()
             result = self.plan.chooseAction()
-        elif (abs(self.tl-self.timeToReturn) < 1):
-            self.plan.returnGraph.addNode(self.currentState.row, self.currentState.col, self.plan.maxColumns, self.plan.getCurrentNodeId)
-            result = self.plan.returnToBase(self.prob.initialState.col, self.prob.initialState.row)
         else:
             result = self.plan.returnToBase(self.prob.initialState.col, self.prob.initialState.row)
         
@@ -152,6 +153,12 @@ class AgentRnd:
         self.expectedState = result[1]
 
         return 1
+
+    def podeContinuar(self): # Agente pode continuar explorando ?
+        deltaRows    = abs(self.currentState.row - self.prob.initialState.row)
+        deltaColumns = abs(self.currentState.col - self.prob.initialState.col)
+        if((deltaRows+deltaColumns+10) > self.tl):
+            self.timeToReturn = True
 
     ## Metodo que executa as acoes
     def executeGo(self, action):
