@@ -2,6 +2,7 @@ from sre_parse import State
 import sys
 import os
 import time
+from pkg.maze import Maze
 
 ## Importa as classes que serao usadas
 sys.path.append(os.path.join("pkg"))
@@ -21,15 +22,15 @@ def buildMaze(model):
     ## Atualiza o labirinto
     model.updateMaze()
 
-def setVictimsList(maze, agent):
+def setVictimsList(maze: Maze, agent: AgentRnd):
     vict = maze.victims #matriz
+    print(vict)
     victimsList = []
-    for row in range(len(vict)):
-        for col in range(len(vict[row])):
+    for row in range(maze.maxRows):
+        for col in range(maze.maxColumns):
             id = vict[row][col]
-            if id != 0 and id != 42: #tem vitima
-                (coll, roww) = (col, row)
-                coord = (coll, roww)
+            if id != 0: #tem vitima
+                coord = (row, col)
                 vitalInfo = agent.victimVitalSignalsSensor(id)
                 vitalInfo2 = vitalInfo[0]
                 grav = vitalInfo2[len(vitalInfo2) - 2]
@@ -99,7 +100,7 @@ def main():
             visited.append(state)
 
     # for victim in victims:
-    #     state = State(victim[0][1], victim[0][0])
+    #     state = State(victim[0][0], victim[0][1])
     #     if state not in visited:
     #         visited.append(state)
 

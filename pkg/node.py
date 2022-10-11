@@ -34,15 +34,15 @@ class Node:
         return self.nextMovDirection
 
     def changeNextMovDirection(self):
-        possibilities         = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"] # Priority array
+        possibilities         = ["L", "S", "O", "N", "NE", "SE", "SO", "NO"] # Priority array
         possibilitiesRelation = {"L"  : (0, 0),
-                                 "SE" : (1, 0),
-                                 "S"  : (2, 0),
-                                 "SO" : (3, 0),
-                                 "O"  : (4, 0),
-                                 "NO" : (5, 0),
-                                 "N"  : (6, 0),
-                                 "NE" : (7, 0)}
+                                 "S"  : (1, 0),
+                                 "O"  : (2, 0),
+                                 "N"  : (3, 0),
+                                 "NE" : (4, 0),
+                                 "SE" : (5, 0),
+                                 "SO" : (6, 0),
+                                 "NO" : (7, 0)}
 
         newMovIndex           = possibilitiesRelation[self.nextMovDirection][0]
         newMovIndex           = (newMovIndex + 1) % 8

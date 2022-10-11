@@ -226,7 +226,7 @@ class AgentRnd:
 
     def appendVictim(self, state, id, vitalInfo):
         (y, x) = (state.row, state.col)
-        coord = (x, y)
+        coord = (y, x)
         grav = vitalInfo[len(vitalInfo) - 2]
         classe = vitalInfo[len(vitalInfo) - 1]
         victim = (coord, id, grav, classe)

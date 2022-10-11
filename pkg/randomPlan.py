@@ -115,15 +115,15 @@ class RandomPlan:
 
     ##################### FINDING VICTIMS SECTION ##############################
     def chooseNextPositionWisely(self, startingDirection):
-        possibilities = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"]
+        possibilities         = ["L", "S", "O", "N", "NE", "SE", "SO", "NO"]
         possibilitiesRelation = {"L"  : (0, 0),
-                                 "SE" : (1, 0),
-                                 "S"  : (2, 0),
-                                 "SO" : (3, 0),
-                                 "O"  : (4, 0),
-                                 "NO" : (5, 0),
-                                 "N"  : (6, 0),
-                                 "NE" : (7, 0)}
+                                 "S"  : (1, 0),
+                                 "O"  : (2, 0),
+                                 "N"  : (3, 0),
+                                 "NE" : (4, 0),
+                                 "SE" : (5, 0),
+                                 "SO" : (6, 0),
+                                 "NO" : (7, 0)}
         movePos               = {"L"  : (0, 1),
                                 "SE" : (1, 1),
                                 "S"  : (1, 0),

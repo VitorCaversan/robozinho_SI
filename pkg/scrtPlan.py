@@ -23,7 +23,7 @@ class ScrtPlan:
         
         self.map = np.ones((maxRows, maxColumns))
         for state in visited:
-            self.map[state.col][state.row] = 0
+            self.map[state.row][state.col] = 0
 
         nVictims = len(self.victims)
 
@@ -139,8 +139,8 @@ class ScrtPlan:
                         cost = 1.5
                         
                         # Pode dar problema
-                        if map[p1.row + delta_row][p1.col] == 1 and map[p1.row][p1.col + delta_col] == 1:
-                            return False, cost
+                        # if map[p1.row + delta_row][p1.col] == 1 and map[p1.row][p1.col + delta_col] == 1:
+                        #     return False, cost
 
                     return True, cost
 
@@ -295,19 +295,19 @@ class ScrtPlan:
             xc = current.col
 
             for index in range(0, len(movePos)):
-                y = movePos[index][1]
-                x = movePos[index][0]
+                y = movePos[index][0]
+                x = movePos[index][1]
                 if yp + y == yc and xp + x == xc:
                     return possibilities[index]
 
         moves = []
-        temp = State(currentState.col, currentState.row)
+        temp = State(currentState.row, currentState.col)
         moves.append((getOrientation(currentParent, currentState), temp)) # Primeiro passo
 
         while currentParent != currentState:
             index = closedStates.index(currentParent)
             currentState, currentCostG, currentCostH, currentParent = closed[index]
-            temp = State(currentState.col, currentState.row)
+            temp = State(currentState.row, currentState.col)
             moves.append((getOrientation(currentParent, currentState), temp))
 
         movesAux = []

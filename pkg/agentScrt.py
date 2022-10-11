@@ -104,7 +104,7 @@ class AgentScrt:
 
         for victim in self.victims:
             victimCoord = victim[0]
-            coord = State(victimCoord[1], victimCoord[0])
+            coord = State(victimCoord[0], victimCoord[1])
             if coord == self.currentState: # se estamos sobre uma vitima
                 add = 1
                 victimId = victim[2]
@@ -113,7 +113,7 @@ class AgentScrt:
                     add = 0
                 if add == 1: 
                     self.victimsSaved.append(victim) # guardando a vitima salva
-                self.model.maze.board.listPlaces[victimCoord[1]][victimCoord[0]].color = (0, 0, 255)
+                self.model.maze.board.listPlaces[victimCoord[0]][victimCoord[1]].color = (0, 0, 255)
 
         ## Verifica se a execução do acao do ciclo anterior funcionou ou nao
         if not (self.currentState == self.expectedState):
