@@ -110,7 +110,6 @@ class AgentRnd:
                 currentNode   = self.plan.searchGraph.getNode(currentNodeId)
                 currentNode.changeNextMovDirection()
             else:
-                print("ERRO? agente deve estar em x ", self.currentState.col ,"e y", self.currentState.row)
                 currentNodeId = self.plan.getCurrentNodeId()
                 currentNode   = self.plan.returnGraph.getNode(currentNodeId)
                 try:
@@ -131,20 +130,29 @@ class AgentRnd:
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
         if self.prob.goalTest(self.currentState) and (self.timeToReturn):
             print("!!! Objetivo atingido !!!")
-            del self.libPlan[0]  ## retira plano da biblioteca
-        
-        ## Verifica se tem vitima na posicao atual    
+            del self.libPlan[0] ## retira plano da biblioteca
+            return -1
+
         victimId = self.victimPresenceSensor()
+
+        vtmFlag = 0
+        for i in range(len(self.victims)):
+            if self.victims[i][1] == victimId:
+                print(self.victims[i][1], victimId)
+                vtmFlag = 1
+                break
+        
         if victimId > 0:
-            if not self.plan.victimsGraph.__contains__(self.currentState.row, self.plan.currentState.col, self.plan.maxColumns):
-                self.plan.victimsGraph.addNode(self.currentState.row, self.plan.currentState.col, self.plan.maxColumns)
-                vitalSignals = self.victimVitalSignalsSensor(victimId)
-                if vitalSignals != []:
-                    self.tl -= 2 # Cost to analyse vital signals
-                    print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", vitalSignals)
-                    self.appendVictim(self.currentState, victimId, vitalSignals[0])
+            if vtmFlag == 0: # victim existis and is not in victims array
+                vitals = self.victimVitalSignalsSensor(victimId)
+                if vitals != []: 
+                    self.tl -= 2 # custo de analisar os sinais vitais
+                    print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", vitals)
+                    self.appendVictim(self.currentState, victimId, vitals[0])
+                    self.plan.victimsGraph.addNode(self.currentState.row, self.currentState.col, self.plan.maxColumns)
+                    self.model.maze.board.listPlaces[self.currentState.row][self.currentState.col].color = (0, 127, 127)
             else:
-                print ("vitima na posicao: ", self.currentState, " de id: ", victimId, " ja analisada")
+                print ("vitima na pos", self.currentState, " de id: ", victimId, " ja analisada")
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
@@ -217,7 +225,7 @@ class AgentRnd:
         self.model.do(posAction, action)
 
     def appendVictim(self, state, id, vitalInfo):
-        (x, y) = (state.col, state.row)
+        (y, x) = (state.row, state.col)
         coord = (x, y)
         grav = vitalInfo[len(vitalInfo) - 2]
         classe = vitalInfo[len(vitalInfo) - 1]

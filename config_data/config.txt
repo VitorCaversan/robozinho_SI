@@ -1,5 +1,5 @@
-maxLin=25
-maxCol=25
+maxLin=30
+maxCol=30
 Tl=70
 Ts=30
 Bv=50

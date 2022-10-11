@@ -1,4 +1,4 @@
-## AGENTE EXPLORADOR
+## AGENTE SOCORRISTA
 ### Agente que fixa um objetivo aleatório e anda aleatoriamente pelo labirinto até encontrá-lo.
 ### Executa raciocíni on-line: percebe --> [delibera] --> executa ação --> percebe --> ...
 import sys
@@ -32,6 +32,7 @@ class AgentScrt:
         self.maxT = configDict["Ts"]
         self.victims = victims
         self.visited = visited
+        self.victimsSaved = []
 
         print("Tempo disponivel: ", self.ts)
         
@@ -61,7 +62,6 @@ class AgentScrt:
         self.prob.defGoalState(model.maze.board.posGoal[0],model.maze.board.posGoal[1])
         print("*** Objetivo do agente: ", self.prob.goalState)
         print("*** Total de vitimas existentes no ambiente: ", self.model.getNumberOfVictims())
-
 
         """
         DEFINE OS PLANOS DE EXECUÇÃO DO AGENTE
@@ -105,7 +105,14 @@ class AgentScrt:
         for victim in self.victims:
             victimCoord = victim[0]
             coord = State(victimCoord[1], victimCoord[0])
-            if coord == self.currentState:
+            if coord == self.currentState: # se estamos sobre uma vitima
+                add = 1
+                victimId = victim[2]
+                if victim in self.victimsSaved:
+                    #if saved == victimId + 1000000: # se ja esta la
+                    add = 0
+                if add == 1: 
+                    self.victimsSaved.append(victim) # guardando a vitima salva
                 self.model.maze.board.listPlaces[victimCoord[1]][victimCoord[0]].color = (0, 0, 255)
 
         ## Verifica se a execução do acao do ciclo anterior funcionou ou nao

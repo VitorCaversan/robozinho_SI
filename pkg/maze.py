@@ -57,9 +57,8 @@ class Maze:
 
 
     def updateWalls(self):
-       
         ## Metodo que atualiza a lista dos objetos (vitimas) que estao no labirinto
-        vs_file = open(os.path.join("config_data" ,"sinais_vitais.txt"),"r")
+        vs_file = open(os.path.join("config_data" ,"teste_sinais_vitais_com_label.txt"),"r")
 
         ## Pega a matriz com todos os lugares (seja quadrado ou triangulo)
         aux = self.board.getListPlaces()
@@ -76,7 +75,7 @@ class Maze:
                     
                     vs_line = vs_file.readline()
                     if vs_line:
-                        values = [float(signal) for signal in vs_line.split(" ")]
+                        values = [float(signal) for signal in vs_line.split(",")]
                         print("sinais vitais da vitima em (", pos[0], ",", pos[1], ") : ", values)
                         self.vitalSignals.append([])
                         self.vitalSignals[self.numberOfVictims-1].append(values[1:])

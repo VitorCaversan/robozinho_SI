@@ -13,7 +13,9 @@ class ScrtPlan:
         self.initialState = initialState
         self.currentState = initialState
         self.model = model
-        self.goalPos = goal
+
+        inv = State(goal.col, goal.row)
+        self.goalPos = inv
         self.actions = []
         self.victims = victims
         self.home = homeState
@@ -41,7 +43,7 @@ class ScrtPlan:
                 self.matrizDist[y][x] = self.AEstrela(coord1, coord2)[0][1]
 
         #print("Matriz de distancias")
-        #print(self.matrizDist)
+        print(self.matrizDist)
 
         # Calcula um caminho a ser seguido para resgatar as vitimas
         solucao = self.calcularSolucao()
@@ -51,7 +53,7 @@ class ScrtPlan:
         firstVictim = self.victims[caminho[0]][0]
         firstCoord = State(firstVictim[0], firstVictim[1])
 
-
+        
         # Cria a sequencia de ações que guia o agente do inicio até a primeira vitima
         self.criarPlano(self.goalPos, firstCoord)
         
